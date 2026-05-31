@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GamerApp - Ultimate Edition</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #121212; color: #ffffff; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* --- Neon Title --- */
+        .neon-title {
+            text-align: center;
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 
+                0 0 5px rgba(0, 210, 255, 0.5),
+                0 0 15px rgba(0, 210, 255, 0.8);
+            margin-bottom: 20px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+        }
+
+        .sidebar { width: 350px; background-color: #1e1e24; border-right: 2px solid #333; padding: 20px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+        .sidebar::-webkit-scrollbar { width: 8px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        
+        .profile-section { text-align: center; padding-bottom: 20px; border-bottom: 1px solid #444; position: relative; }
+        .profile-img { width: 90px; height: 90px; border-radius: 50%; border: 3px solid #00ff88; margin-bottom: 5px; object-fit: cover; background: #000; }
+        .user-id { color: #888; font-size: 0.9em; font-weight: bold; margin-top: 5px; }
+        
+        /* Profile Gallery */
+        .btn-small { background: #333; color: white; border: 1px solid #555; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8em; transition: 0.2s; margin-bottom: 10px; }
+        .btn-small:hover { background: #00ff88; color: black; }
+        
+        .gallery-container { display: none; background: #2a2a35; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #444; }
+        .gallery-grid { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+        .gallery-pic { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+        .gallery-pic:hover { border-color: #00ff88; transform: scale(1.1); }
+        
+        .upload-wrapper { border-top: 1px dashed #555; padding-top: 10px; }
+        .upload-wrapper label { display: block; background: #8a2be2; color: white; padding: 5px; border-radius: 4px; cursor: pointer; font-size: 0.85em; }
+        .upload-wrapper label:hover { background: #6a1b9a; }
+        
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        .input-group input { width: 100%; padding: 10px; border-radius: 5px; border: none; background: #2a2a35; color: white; }
+        .btn-primary { width: 100%; padding: 10px; background: #00ff88; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-primary:hover { background: #00cc6a; }
+        
+        .section-title { font-size: 1.2em; color: #00ff88; margin-bottom: 10px; border-bottom: 1px dashed #444; padding-bottom: 5px; text-transform: uppercase; }
+        
+        .list-container { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        
+        .room-item, .friend-item { padding: 12px; background: #2a2a35; border-radius: 5px; display: flex; flex-direction: column; gap: 10px; border-left: 3px solid #0088ff; }
+        .friend-item { flex-direction: row; justify-content: space-between; align-items: center; padding: 10px; border-left: 3px solid #00ff88; font-size: 0.9em; }
+        
+        .room-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1em; }
+        .room-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+        .room-actions button { flex-grow: 1; padding: 6px; border: none; border-radius: 3px; cursor: pointer; color: white; font-weight: bold; font-size: 0.85em; transition: 0.2s; }
+        .btn-join { background: #0088ff; } .btn-join:hover { background: #0066cc; }
+        .btn-edit { background: #ffaa00; } .btn-edit:hover { background: #cc8800; }
+        .btn-delete { background: #ff0055; } .btn-delete:hover { background: #cc0044; }
+        
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; padding: 20px; position: relative; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid #333; }
+        #currentRoomDisplay { color: #00ff88; font-weight: bold; }
+        
+        .btn-live { background: #ff0055; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; font-size: 1.1em; cursor: pointer; box-shadow: 0 0 10px #ff0055; transition: 0.3s; }
+        .btn-live:hover { background: #cc0044; box-shadow: 0 0 20px #ff0055; }
+
+        .chat-area { flex-grow: 1; margin-top: 20px; background: #1a1a20; border-radius: 10px; padding: 15px; display: flex; flex-direction: column; }
+        .messages { flex-grow: 1; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 15px; padding-right: 10px; }
+        
+        .message-wrapper { display: flex; flex-direction: column; max-width: 70%; width: fit-content; transition: 0.3s opacity; }
+        
+        .message-wrapper.right { align-self: flex-end; text-align: right; }
+        .message-wrapper.left { align-self: flex-start; text-align: left; }
+
+        .message-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .message-wrapper.right .message-header { flex-direction: row-reverse; }
+        
+        .chat-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid #444; }
+        .message-sender { font-size: 0.85em; color: #aaa; font-weight: bold; }
+        
+        .delete-btn { background: none; border: none; cursor: pointer; font-size: 0.9em; opacity: 0.5; transition: 0.2s; padding: 0; }
+        .delete-btn:hover { opacity: 1; transform: scale(1.1); }
+        
+        .message-box { padding: 12px; border-radius: 8px; color: white; line-height: 1.4; min-width: 80px; word-break: break-word; }
+        .message-box.sender-box { background: #1b3a24; border-right: 4px solid #00ff88; }
+        .message-box.other-box { background: #1c2d42; border-left: 4px solid #0088ff; }
+
+        /* --- OWNER Design --- */
+        .owner-message-box {
+            border: 3px solid #00bfff !important; 
+            background-color: #f0fbff !important;
+            color: #121212 !important; 
+            position: relative;
+        }
+        .owner-label {
+            font-size: 11px;
+            color: #00bfff;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 2px;
+            margin-left: 5px;
+        }
+        .message-sender.creator-name { color: #00bfff; }
+
+        .chat-controls { display: flex; gap: 10px; }
+        .chat-controls input { flex-grow: 1; padding: 15px; border-radius: 5px; border: none; background: #2a2a35; color: white; font-size: 1em; }
+        
+        .video-container { display: none; margin-top: 20px; background: #000; border-radius: 10px; border: 2px solid #ff0055; overflow: hidden; position: relative; }
+        video { width: 100%; height: auto; max-height: 400px; object-fit: cover; }
+        .close-video { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 5px; z-index: 10; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="profile-section">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Gamer" alt="Profile" class="profile-img" id="mainProfilePic">
+            <br>
+            <button class="btn-small" onclick="toggleGallery()">Change Avatar</button>
+            
+            <div class="gallery-container" id="galleryContainer">
+                <div class="gallery-grid">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Gamer" class="gallery-pic" onclick="setProfilePic(this.src)">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Ninja" class="gallery-pic" onclick="setProfilePic(this.src)">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Hacker" class="gallery-pic" onclick="setProfilePic(this.src)">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Robot" class="gallery-pic" onclick="setProfilePic(this.src)">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=King" class="gallery-pic" onclick="setProfilePic(this.src)">
+                </div>
+                <div class="upload-wrapper">
+                    <label>
+                        Upload Custom PNG...
+                        <input type="file" accept="image/png" style="display:none;" onchange="uploadCustomPic(event)">
+                    </label>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="myName" placeholder="Enter player name...">
+                <button class="btn-primary" id="loginBtn" onclick="handleAuth()">Login</button>
+            </div>
+            <p class="user-id" id="myIdDisplay">Loading ID...</p>
+        </div>
+
+        <div class="rooms-section">
+            <div class="section-title">🌐 Private Rooms</div>
+            <div class="input-group">
+                <input type="text" id="newRoomName" placeholder="New room name...">
+                <button class="btn-primary" onclick="createNewRoom()">Create Room</button>
+            </div>
+            <div class="list-container" id="roomsList"></div>
+        </div>
+
+        <div class="friends-section">
+            <div class="section-title">👥 Friends</div>
+            <div class="input-group">
+                <input type="text" id="friendIdInput" placeholder="Enter Friend's ID...">
+                <button class="btn-primary" onclick="addFriendLocal()">Add Friend</button>
+            </div>
+            <div class="list-container" id="friendsList"></div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h1 class="neon-title">GamerCardApp.com</h1>
+
+        <div class="header">
+            <h2 id="currentRoomDisplay">Current Room: Main Lobby</h2>
+            <button class="btn-live" onclick="goLive()">🔴 GO LIVE</button>
+        </div>
+
+        <div class="video-container" id="videoContainer">
+            <button class="close-video" onclick="stopLive()">Close Stream</button>
+            <video id="myVideo" autoplay muted></video>
+        </div>
+
+        <div class="chat-area">
+            <div class="messages" id="messagesArea">
+                <div class="message-box" style="background: #2a2a35; border-right: 3px solid #0088ff;">
+                    Welcome to GamerApp! The system is running in standalone web mode.
+                </div>
+            </div>
+            <div class="chat-controls">
+                <input type="text" id="msgInput" placeholder="Type a message...">
+                <button class="btn-primary" style="width: 120px;" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let myStream = null;
+        let currentActiveRoom = 'Main Lobby';
+        let currentUser = localStorage.getItem('gamerApp_Name_EN') || "";
+        let myId = localStorage.getItem('gamerApp_ID_EN');
+        let savedPic = localStorage.getItem('gamerApp_Pic_EN') || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Gamer';
+
+        let localRooms = JSON.parse(localStorage.getItem('gamerApp_Rooms_EN')) || ['Main Lobby'];
+        let roomMessages = JSON.parse(localStorage.getItem('gamerApp_History_EN')) || { 'Main Lobby': [] };
+        
+        // מערכת חברים מקומית
+        let localFriends = JSON.parse(localStorage.getItem('gamerApp_FriendsList_EN')) || [];
+
+        document.getElementById('mainProfilePic').src = savedPic;
+
+        window.onload = () => {
+            if (!myId) {
+                myId = 'GMR-4358'; 
+                localStorage.setItem('gamerApp_ID_EN', myId);
+            }
+            document.getElementById('myIdDisplay').innerText = `ID: ${myId}`;
+
+            if (currentUser) {
+                document.getElementById('myName').value = currentUser;
+                document.getElementById('loginBtn').innerText = "Change Name";
+                document.getElementById('loginBtn').style.background = "#0088ff";
+                document.getElementById('loginBtn').style.color = "white";
+            }
+            
+            refreshRoomsDOM();
+            refreshFriendsDOM();
+            loadRoomHistory(currentActiveRoom);
+        };
+
+        function toggleGallery() {
+            const gal = document.getElementById('galleryContainer');
+            gal.style.display = (gal.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function setProfilePic(url) {
+            savedPic = url;
+            document.getElementById('mainProfilePic').src = url;
+            localStorage.setItem('gamerApp_Pic_EN', url);
+            toggleGallery();
+        }
+
+        function uploadCustomPic(event) {
+            const file = event.target.files[0];
+            if (file && file.type === 'image/png') {
+                const reader = new FileReader();
+                reader.onload = function(e) { setProfilePic(e.target.result); };
+                reader.readAsDataURL(file);
+            } else if(file) {
+                alert('Please upload a PNG file only!');
+            }
+        }
+
+        function handleAuth() {
+            const nameInput = document.getElementById('myName').value.trim();
+            if(!nameInput) return alert("Please enter a player name!");
+            currentUser = nameInput;
+            localStorage.setItem('gamerApp_Name_EN', currentUser);
+            alert("Name updated successfully!");
+            location.reload();
+        }
+
+        // --- מערכת חברים מקומית ---
+        function addFriendLocal() {
+            const idInput = document.getElementById('friendIdInput').value.trim();
+            
+            if(!idInput) return alert("Please enter a friend's ID!");
+            if(idInput === myId) return alert("You cannot add yourself as a friend!");
+
+            // בדיקה אם החבר כבר קיים ברשימה
+            const alreadyExists = localFriends.some(f => f.id === idInput);
+            if(alreadyExists) return alert("This ID is already in your friends list!");
+
+            // חלון קופץ לבקשת הכינוי
+            const nickname = prompt(`Enter a nickname for the friend with ID ${idInput}:`);
+            
+            if(nickname && nickname.trim() !== "") {
+                localFriends.push({ id: idInput, name: nickname.trim() });
+                localStorage.setItem('gamerApp_FriendsList_EN', JSON.stringify(localFriends));
+                document.getElementById('friendIdInput').value = '';
+                refreshFriendsDOM();
+            }
+        }
+
+        function removeFriendLocal(friendId) {
+            if(confirm("Are you sure you want to remove this friend?")) {
+                localFriends = localFriends.filter(f => f.id !== friendId);
+                localStorage.setItem('gamerApp_FriendsList_EN', JSON.stringify(localFriends));
+                refreshFriendsDOM();
+            }
+        }
+
+        function refreshFriendsDOM() {
+            const list = document.getElementById('friendsList');
+            list.innerHTML = '';
+            localFriends.forEach(friend => {
+                const item = document.createElement('div');
+                item.className = 'friend-item';
+                item.innerHTML = `
+                    <span><b>${friend.id}</b> - (${friend.name})</span>
+                    <button style="background: #ff0055; border:none; padding:5px 10px; color:white; border-radius:3px; cursor: pointer; font-weight: bold;" onclick="removeFriendLocal('${friend.id}')">Remove</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+        // -------------------------
+
+        function createNewRoom() {
+            const roomName = document.getElementById('newRoomName').value.trim();
+            if(!roomName) return;
+            if(localRooms.includes(roomName)) return alert("Room already exists!");
+
+            localRooms.push(roomName);
+            roomMessages[roomName] = [];
+            localStorage.setItem('gamerApp_Rooms_EN', JSON.stringify(localRooms));
+            localStorage.setItem('gamerApp_History_EN', JSON.stringify(roomMessages));
+            
+            document.getElementById('newRoomName').value = '';
+            refreshRoomsDOM();
+            joinRoom(roomName);
+        }
+
+        function refreshRoomsDOM() {
+            const list = document.getElementById('roomsList');
+            list.innerHTML = '';
+            localRooms.forEach(roomName => {
+                const roomDiv = document.createElement('div');
+                roomDiv.className = 'room-item';
+                roomDiv.id = 'room-' + roomName;
+                
+                let actionsHTML = `<button class="btn-join" onclick="joinRoom('${roomName}')">Join</button>`;
+                if (roomName !== 'Main Lobby') {
+                    actionsHTML += `
+                        <button class="btn-edit" onclick="renameRoom('${roomName}')">Edit</button>
+                        <button class="btn-delete" onclick="deleteRoom('${roomName}')">Delete</button>
+                    `;
+                }
+
+                roomDiv.innerHTML = `
+                    <div class="room-header"><span class="room-name">${roomName}</span></div>
+                    <div class="room-actions">${actionsHTML}</div>
+                `;
+                list.appendChild(roomDiv);
+            });
+        }
+
+        function joinRoom(roomName) {
+            currentActiveRoom = roomName;
+            document.getElementById('currentRoomDisplay').innerText = `Current Room: ${roomName}`;
+            loadRoomHistory(roomName);
+        }
+
+        function deleteRoom(roomName) {
+            if(confirm(`Delete the room "${roomName}"?`)) {
+                localRooms = localRooms.filter(r => r !== roomName);
+                delete roomMessages[roomName];
+                localStorage.setItem('gamerApp_Rooms_EN', JSON.stringify(localRooms));
+                localStorage.setItem('gamerApp_History_EN', JSON.stringify(roomMessages));
+                refreshRoomsDOM();
+                joinRoom('Main Lobby');
+            }
+        }
+
+        function renameRoom(oldName) {
+            const newName = prompt('Enter new room name:', oldName);
+            if(newName && newName.trim() !== '' && newName !== oldName) {
+                const index = localRooms.indexOf(oldName);
+                if (index !== -1) {
+                    localRooms[index] = newName;
+                    roomMessages[newName] = roomMessages[oldName];
+                    delete roomMessages[oldName];
+                    localStorage.setItem('gamerApp_Rooms_EN', JSON.stringify(localRooms));
+                    localStorage.setItem('gamerApp_History_EN', JSON.stringify(roomMessages));
+                    refreshRoomsDOM();
+                    joinRoom(newName);
+                }
+            }
+        }
+
+        function loadRoomHistory(roomName) {
+            const msgsArea = document.getElementById('messagesArea');
+            msgsArea.innerHTML = '';
+            const history = roomMessages[roomName] || [];
+            if (history.length === 0) {
+                msgsArea.innerHTML = `<div class="message-box" style="background: #2a2a35; border-right: 3px solid #ff9900;">Room is empty. Be the first to send a message!</div>`;
+            } else {
+                history.forEach(msg => displayMessage(msg));
+            }
+        }
+
+        function sendMessage() {
+            const text = document.getElementById('msgInput').value.trim();
+            if(!text) return;
+
+            const name = currentUser || "Anonymous Player";
+            const messageObj = {
+                msgId: 'msg-' + Date.now(),
+                from: name,
+                id: myId,
+                pic: savedPic,
+                text: text
+            };
+
+            if (!roomMessages[currentActiveRoom]) roomMessages[currentActiveRoom] = [];
+            roomMessages[currentActiveRoom].push(messageObj);
+            localStorage.setItem('gamerApp_History_EN', JSON.stringify(roomMessages));
+
+            document.getElementById('msgInput').value = '';
+            loadRoomHistory(currentActiveRoom);
+        }
+
+        function displayMessage(data) {
+            const msgs = document.getElementById('messagesArea');
+            const isMe = (data.id === myId);
+            const isOwner = (data.id === 'GMR-4358'); 
+
+            let sideClass = isMe ? 'right' : 'left';
+            let boxClass = 'message-box';
+            let senderClass = 'message-sender';
+            let senderName = data.from;
+
+            if (isOwner) {
+                boxClass += ' owner-message-box';
+                senderClass += ' creator-name';
+                senderName = `👑 ${data.from}`;
+            } else if (isMe) {
+                boxClass += ' sender-box';
+            } else {
+                boxClass += ' other-box';
+            }
+
+            let ownerLabel = isOwner ? '<span class="owner-label">OWNER</span>' : '';
+            let deleteHTML = `<button class="delete-btn" onclick="deleteLocalMessage('${data.msgId}')" title="Delete Message">🗑️</button>`;
+
+            msgs.innerHTML += `
+                <div class="message-wrapper ${sideClass}" id="ui-msg-${data.msgId}">
+                    <div class="message-header">
+                        <img src="${data.pic}" class="chat-avatar" alt="Avatar">
+                        <div class="${senderClass}">${senderName}</div>
+                        ${deleteHTML}
+                    </div>
+                    ${ownerLabel}
+                    <div class="${boxClass}">${data.text}</div>
+                </div>
+            `;
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+
+        function deleteLocalMessage(msgId) {
+            if(confirm('Delete message?')) {
+                roomMessages[currentActiveRoom] = roomMessages[currentActiveRoom].filter(msg => msg.msgId !== msgId);
+                localStorage.setItem('gamerApp_History_EN', JSON.stringify(roomMessages));
+                loadRoomHistory(currentActiveRoom);
+            }
+        }
+
+        document.getElementById("msgInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") sendMessage();
+        });
+
+        async function goLive() {
+            const videoContainer = document.getElementById('videoContainer');
+            const videoElement = document.getElementById('myVideo');
+            try {
+                myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                videoElement.srcObject = myStream;
+                videoContainer.style.display = 'block';
+            } catch (error) {
+                alert("Cannot access camera: " + error.message);
+            }
+        }
+
+        function stopLive() {
+            if(myStream) { myStream.getTracks().forEach(track => track.stop()); }
+            document.getElementById('videoContainer').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
