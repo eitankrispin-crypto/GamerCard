@@ -4,19 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GamerApp - Ultimate Edition</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #121212; color: #ffffff; display: flex; height: 100vh; overflow: hidden; }
         
-        /* --- Neon Title --- */
         .neon-title {
             text-align: center;
             font-size: 2.8rem;
             font-weight: 900;
             color: #ffffff;
-            text-shadow: 
-                0 0 5px rgba(0, 210, 255, 0.5),
-                0 0 15px rgba(0, 210, 255, 0.8);
+            text-shadow: 0 0 5px rgba(0, 210, 255, 0.5), 0 0 15px rgba(0, 210, 255, 0.8);
             margin-bottom: 20px;
             letter-spacing: 4px;
             text-transform: uppercase;
@@ -31,7 +29,6 @@
         .profile-img { width: 90px; height: 90px; border-radius: 50%; border: 3px solid #00ff88; margin-bottom: 5px; object-fit: cover; background: #000; }
         .user-id { color: #888; font-size: 0.9em; font-weight: bold; margin-top: 5px; }
         
-        /* Profile Gallery */
         .btn-small { background: #333; color: white; border: 1px solid #555; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8em; transition: 0.2s; margin-bottom: 10px; }
         .btn-small:hover { background: #00ff88; color: black; }
         
@@ -50,7 +47,6 @@
         .btn-primary:hover { background: #00cc6a; }
         
         .section-title { font-size: 1.2em; color: #00ff88; margin-bottom: 10px; border-bottom: 1px dashed #444; padding-bottom: 5px; text-transform: uppercase; }
-        
         .list-container { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
         
         .room-item, .friend-item { padding: 12px; background: #2a2a35; border-radius: 5px; display: flex; flex-direction: column; gap: 10px; border-left: 3px solid #0088ff; }
@@ -74,7 +70,6 @@
         .messages { flex-grow: 1; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 15px; padding-right: 10px; }
         
         .message-wrapper { display: flex; flex-direction: column; max-width: 70%; width: fit-content; transition: 0.3s opacity; }
-        
         .message-wrapper.right { align-self: flex-end; text-align: right; }
         .message-wrapper.left { align-self: flex-start; text-align: left; }
 
@@ -91,21 +86,8 @@
         .message-box.sender-box { background: #1b3a24; border-right: 4px solid #00ff88; }
         .message-box.other-box { background: #1c2d42; border-left: 4px solid #0088ff; }
 
-        /* --- OWNER Design --- */
-        .owner-message-box {
-            border: 3px solid #00bfff !important; 
-            background-color: #f0fbff !important;
-            color: #121212 !important; 
-            position: relative;
-        }
-        .owner-label {
-            font-size: 11px;
-            color: #00bfff;
-            font-weight: bold;
-            display: block;
-            margin-bottom: 2px;
-            margin-left: 5px;
-        }
+        .owner-message-box { border: 3px solid #00bfff !important; background-color: #f0fbff !important; color: #121212 !important; position: relative; }
+        .owner-label { font-size: 11px; color: #00bfff; font-weight: bold; display: block; margin-bottom: 2px; margin-left: 5px; }
         .message-sender.creator-name { color: #00bfff; }
 
         .chat-controls { display: flex; gap: 10px; }
@@ -180,11 +162,7 @@
         </div>
 
         <div class="chat-area">
-            <div class="messages" id="messagesArea">
-                <div class="message-box" style="background: #2a2a35; border-right: 3px solid #0088ff;">
-                    Welcome to GamerApp! The system is running in standalone web mode.
-                </div>
-            </div>
+            <div class="messages" id="messagesArea"></div>
             <div class="chat-controls">
                 <input type="text" id="msgInput" placeholder="Type a message...">
                 <button class="btn-primary" style="width: 120px;" onclick="sendMessage()">Send</button>
@@ -193,6 +171,9 @@
     </div>
 
     <script>
+        // חיבור ישיר לשרת ה-Render החי שלך
+        const socket = io('https://gamercard.onrender.com');
+
         let myStream = null;
         let currentActiveRoom = 'Main Lobby';
         let currentUser = localStorage.getItem('gamerApp_Name_EN') || "";
@@ -201,15 +182,13 @@
 
         let localRooms = JSON.parse(localStorage.getItem('gamerApp_Rooms_EN')) || ['Main Lobby'];
         let roomMessages = JSON.parse(localStorage.getItem('gamerApp_History_EN')) || { 'Main Lobby': [] };
-        
-        // מערכת חברים מקומית
         let localFriends = JSON.parse(localStorage.getItem('gamerApp_FriendsList_EN')) || [];
 
         document.getElementById('mainProfilePic').src = savedPic;
 
         window.onload = () => {
             if (!myId) {
-                myId = 'GMR-4358'; 
+                myId = 'GMR-' + Math.floor(1000 + Math.random() * 9000); 
                 localStorage.setItem('gamerApp_ID_EN', myId);
             }
             document.getElementById('myIdDisplay').innerText = `ID: ${myId}`;
@@ -225,6 +204,18 @@
             refreshFriendsDOM();
             loadRoomHistory(currentActiveRoom);
         };
+
+        // האזנה לקבלת הודעות בזמן אמת מהשרת
+        socket.on('receiveMessage', (messageObj) => {
+            if (!roomMessages[currentActiveRoom]) roomMessages[currentActiveRoom] = [];
+            
+            // מניעת כפילויות בהודעות מקומיות
+            if (!roomMessages[currentActiveRoom].some(m => m.msgId === messageObj.msgId)) {
+                roomMessages[currentActiveRoom].push(messageObj);
+                localStorage.setItem('gamerApp_History_EN', JSON.stringify(roomMessages));
+                loadRoomHistory(currentActiveRoom);
+            }
+        });
 
         function toggleGallery() {
             const gal = document.getElementById('galleryContainer');
@@ -258,20 +249,15 @@
             location.reload();
         }
 
-        // --- מערכת חברים מקומית ---
         function addFriendLocal() {
             const idInput = document.getElementById('friendIdInput').value.trim();
-            
             if(!idInput) return alert("Please enter a friend's ID!");
             if(idInput === myId) return alert("You cannot add yourself as a friend!");
 
-            // בדיקה אם החבר כבר קיים ברשימה
             const alreadyExists = localFriends.some(f => f.id === idInput);
             if(alreadyExists) return alert("This ID is already in your friends list!");
 
-            // חלון קופץ לבקשת הכינוי
             const nickname = prompt(`Enter a nickname for the friend with ID ${idInput}:`);
-            
             if(nickname && nickname.trim() !== "") {
                 localFriends.push({ id: idInput, name: nickname.trim() });
                 localStorage.setItem('gamerApp_FriendsList_EN', JSON.stringify(localFriends));
@@ -301,7 +287,6 @@
                 list.appendChild(item);
             });
         }
-        // -------------------------
 
         function createNewRoom() {
             const roomName = document.getElementById('newRoomName').value.trim();
@@ -384,6 +369,7 @@
             } else {
                 history.forEach(msg => displayMessage(msg));
             }
+            msgsArea.scrollTop = msgsArea.scrollHeight;
         }
 
         function sendMessage() {
@@ -399,12 +385,10 @@
                 text: text
             };
 
-            if (!roomMessages[currentActiveRoom]) roomMessages[currentActiveRoom] = [];
-            roomMessages[currentActiveRoom].push(messageObj);
-            localStorage.setItem('gamerApp_History_EN', JSON.stringify(roomMessages));
+            // שליחת ההודעה לשרת ה-Render בזמן אמת
+            socket.emit('sendMessage', messageObj);
 
             document.getElementById('msgInput').value = '';
-            loadRoomHistory(currentActiveRoom);
         }
 
         function displayMessage(data) {
@@ -430,7 +414,7 @@
             let ownerLabel = isOwner ? '<span class="owner-label">OWNER</span>' : '';
             let deleteHTML = `<button class="delete-btn" onclick="deleteLocalMessage('${data.msgId}')" title="Delete Message">🗑️</button>`;
 
-            msgs.innerHTML += `
+            const msgHtml = `
                 <div class="message-wrapper ${sideClass}" id="ui-msg-${data.msgId}">
                     <div class="message-header">
                         <img src="${data.pic}" class="chat-avatar" alt="Avatar">
@@ -441,6 +425,12 @@
                     <div class="${boxClass}">${data.text}</div>
                 </div>
             `;
+            
+            // מניעת שכפול אלמנטים ב-UI
+            const existingElement = document.getElementById(`ui-msg-${data.msgId}`);
+            if(!existingElement) {
+                msgs.innerHTML += msgHtml;
+            }
             msgs.scrollTop = msgs.scrollHeight;
         }
 
@@ -473,9 +463,5 @@
             document.getElementById('videoContainer').style.display = 'none';
         }
     </script>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script>
-    const socket = io('https://gamercard.onrender.com');
-</script>
 </body>
 </html>
